@@ -201,6 +201,17 @@ app.put('/posts/:id', (req, res) => {
   res.json(post);
 });
 
+// DELETE A POST
+app.delete('/posts/:id', (req, res) => {
+  const id = Number(req.params.id);
+  const postIndex = posts.findIndex((p) => p.id === id);
 
-  
+  if (postIndex === -1) {
+    return res.status(404).json({ error: 'Post not found' });
+  }
+
+  posts.splice(postIndex, 1);
+  res.status(204).send();
+});
+
 module.exports = app;
