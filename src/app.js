@@ -130,18 +130,6 @@ app.get('/posts/:id', (req, res) => {
   res.json(post);
 });
 
-// GET POST BY ID
-app.get('/posts/:id', (req, res) => {
-  const id = Number(req.params.id);
-  const post = posts.find((p) => p.id === id);
-
-  if (!post) {
-    return res.status(404).json({ error: 'Post not found' });
-  }
-
-  res.json(post);
-});
-
 // GET POSTS BY AUTHOR ID
 app.get('/posts/author/:authorId', (req, res) => {
   const authorId = Number(req.params.authorId);
@@ -156,13 +144,63 @@ app.get('/posts/author/:authorId', (req, res) => {
   res.json({ author, posts: authorPosts });
 });
 
-//CREATE A NEW POST
-app.post('/posts', (req, res) => {)
-  const {title, content, author_id, published} = req.body;
+// CREATE A NEW POST
+app.post('/posts', (req, res) => {
+  const { title, content, author_id, published } = req.body;
 
   if (!title || !content || !author_id) {
     return res.status(400).json({ error: 'Title, content, and author_id are required' });
+  }
+
+  const authorId = Number(author_id);
+  const authorExists = authors.some((a) => a.id === authorId);
+
+  if (!authorExists) {
+    return res.status(400).json({ error: 'Author does not exist' });
+  }
+
+  const newId = posts.length > 0 ? posts[posts.length - 1].id + 1 : 1;
+  const newPost = {
+    id: newId,
+    title,
+    content,
+    author_id: authorId,
+    published: published ?? false,
+    created_at: new Date().toISOString().slice(0, 10)
+  };
+
+  posts.push(newPost);
+  res.status(201).json(newPost);
+});
+
+// UPDATE AN EXISTING POST
+app.put('/posts/:id', (req, res) => {
+  const id = Number(req.params.id);
+  const post = posts.find((p) => p.id === id);
+
+  if (!post) {
+    return res.status(404).json({ error: 'Post not found' });
+  }
+
+  const { title, content, author_id, published } = req.body;
+
+  if (author_id !== undefined) {
+    const authorId = Number(author_id);
+    const authorExists = authors.some((a) => a.id === authorId);
+
+    if (!authorExists) {
+      return res.status(400).json({ error: 'Author does not exist' });
+    }
+    post.author_id = authorId;
+  }
+
+  if (title) post.title = title;
+  if (content) post.content = content;
+  if (published !== undefined) post.published = published;
+
+  res.json(post);
+});
+
+
   
-     const authorExists = authors.find((a) 
-  })
-mo1dule.exports = app;
+module.exports = app;
