@@ -130,4 +130,39 @@ app.get('/posts/:id', (req, res) => {
   res.json(post);
 });
 
-module.exports = app;
+// GET POST BY ID
+app.get('/posts/:id', (req, res) => {
+  const id = Number(req.params.id);
+  const post = posts.find((p) => p.id === id);
+
+  if (!post) {
+    return res.status(404).json({ error: 'Post not found' });
+  }
+
+  res.json(post);
+});
+
+// GET POSTS BY AUTHOR ID
+app.get('/posts/author/:authorId', (req, res) => {
+  const authorId = Number(req.params.authorId);
+  const author = authors.find((a) => a.id === authorId);
+
+  if (!author) {
+    return res.status(404).json({ error: 'Author not found' });
+  }
+
+  const authorPosts = posts.filter((p) => p.author_id === authorId);
+
+  res.json({ author, posts: authorPosts });
+});
+
+//CREATE A NEW POST
+app.post('/posts', (req, res) => {)
+  const {title, content, author_id, published} = req.body;
+
+  if (!title || !content || !author_id) {
+    return res.status(400).json({ error: 'Title, content, and author_id are required' });
+  
+     const authorExists = authors.find((a) 
+  })
+mo1dule.exports = app;
