@@ -1,4 +1,5 @@
 const express = require('express');
+const pool = require('./db/pool');
 const app = express();
 
 app.use(express.json());
@@ -10,64 +11,89 @@ const authors = [
 ];
 
 // GET ALL AUTHORS
-app.get('/authors', (req, res) => {
-  res.json(authors);
+app.get('/authors', async (req, res) => {
+  try {
+    res.json(authors);
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ error: 'Internal server error' });
+  }
 });
 
 // GET AUTHOR BY ID
-app.get('/authors/:id', (req, res) => {
-  const id = Number(req.params.id);
-  const author = authors.find((a) => a.id === id);
+app.get('/authors/:id', async (req, res) => {
+  try {
+    const id = Number(req.params.id);
+    const author = authors.find((a) => a.id === id);
 
-  if (!author) {
-    return res.status(404).json({ error: 'Author not found' });
+    if (!author) {
+      return res.status(404).json({ error: 'Author not found' });
+    }
+
+    res.json(author);
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ error: 'Internal server error' });
   }
-
-  res.json(author);
 });
 
 // CREATE A NEW AUTHOR
-app.post('/authors', (req, res) => {
-  const { name, email } = req.body;
+app.post('/authors', async (req, res) => {
+  try {
+    const { name, email } = req.body;
 
-  if (!name || !email) {
-    return res.status(400).json({ error: 'Name and email are required' });
+    if (!name || !email) {
+      return res.status(400).json({ error: 'Name and email are required' });
+    }
+
+    const newId = authors.length > 0 ? authors[authors.length - 1].id + 1 : 1;
+    const newAuthor = { id: newId, name, email };
+    authors.push(newAuthor);
+
+    res.status(201).json(newAuthor);
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ error: 'Internal server error' });
   }
-
-  const newId = authors.length > 0 ? authors[authors.length - 1].id + 1 : 1;
-  const newAuthor = { id: newId, name, email };
-  authors.push(newAuthor);
-
-  res.status(201).json(newAuthor);
 });
 
 // UPDATE AN EXISTING AUTHOR
-app.put('/authors/:id', (req, res) => {
-  const id = Number(req.params.id);
-  const author = authors.find((a) => a.id === id);
+app.put('/authors/:id', async (req, res) => {
+  try {
+    const id = Number(req.params.id);
+    const author = authors.find((a) => a.id === id);
 
-  if (!author) {
-    return res.status(404).json({ error: 'Author not found' });
+    if (!author) {
+      return res.status(404).json({ error: 'Author not found' });
+    }
+
+    const { name, email } = req.body;
+    if (name) author.name = name;
+    if (email) author.email = email;
+
+    res.json(author);
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ error: 'Internal server error' });
   }
-
-  const { name, email } = req.body;
-  if (name) author.name = name;
-  if (email) author.email = email;
-
-  res.json(author);
 });
 
 // DELETE AN AUTHOR
-app.delete('/authors/:id', (req, res) => {
-  const id = Number(req.params.id);
-  const authorIndex = authors.findIndex((a) => a.id === id);
+app.delete('/authors/:id', async (req, res) => {
+  try {
+    const id = Number(req.params.id);
+    const authorIndex = authors.findIndex((a) => a.id === id);
 
-  if (authorIndex === -1) {
-    return res.status(404).json({ error: 'Author not found' });
+    if (authorIndex === -1) {
+      return res.status(404).json({ error: 'Author not found' });
+    }
+
+    authors.splice(authorIndex, 1);
+    res.status(204).send();
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ error: 'Internal server error' });
   }
-
-  authors.splice(authorIndex, 1);
-  res.status(204).send();
 });
 
 const posts = [
@@ -114,104 +140,134 @@ const posts = [
 ];
 
 // GET ALL POSTS
-app.get('/posts', (req, res) => {
-  res.json(posts);
+app.get('/posts', async (req, res) => {
+  try {
+    res.json(posts);
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ error: 'Internal server error' });
+  }
 });
 
 // GET POST BY ID
-app.get('/posts/:id', (req, res) => {
-  const id = Number(req.params.id);
-  const post = posts.find((p) => p.id === id);
+app.get('/posts/:id', async (req, res) => {
+  try {
+    const id = Number(req.params.id);
+    const post = posts.find((p) => p.id === id);
 
-  if (!post) {
-    return res.status(404).json({ error: 'Post not found' });
+    if (!post) {
+      return res.status(404).json({ error: 'Post not found' });
+    }
+
+    res.json(post);
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ error: 'Internal server error' });
   }
-
-  res.json(post);
 });
 
 // GET POSTS BY AUTHOR ID
-app.get('/posts/author/:authorId', (req, res) => {
-  const authorId = Number(req.params.authorId);
-  const author = authors.find((a) => a.id === authorId);
+app.get('/posts/author/:authorId', async (req, res) => {
+  try {
+    const authorId = Number(req.params.authorId);
+    const author = authors.find((a) => a.id === authorId);
 
-  if (!author) {
-    return res.status(404).json({ error: 'Author not found' });
+    if (!author) {
+      return res.status(404).json({ error: 'Author not found' });
+    }
+
+    const authorPosts = posts.filter((p) => p.author_id === authorId);
+
+    res.json({ author, posts: authorPosts });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ error: 'Internal server error' });
   }
-
-  const authorPosts = posts.filter((p) => p.author_id === authorId);
-
-  res.json({ author, posts: authorPosts });
 });
 
 // CREATE A NEW POST
-app.post('/posts', (req, res) => {
-  const { title, content, author_id, published } = req.body;
+app.post('/posts', async (req, res) => {
+  try {
+    const { title, content, author_id, published } = req.body;
 
-  if (!title || !content || !author_id) {
-    return res.status(400).json({ error: 'Title, content, and author_id are required' });
-  }
+    if (!title || !content || !author_id) {
+      return res.status(400).json({ error: 'Title, content, and author_id are required' });
+    }
 
-  const authorId = Number(author_id);
-  const authorExists = authors.some((a) => a.id === authorId);
-
-  if (!authorExists) {
-    return res.status(400).json({ error: 'Author does not exist' });
-  }
-
-  const newId = posts.length > 0 ? posts[posts.length - 1].id + 1 : 1;
-  const newPost = {
-    id: newId,
-    title,
-    content,
-    author_id: authorId,
-    published: published ?? false,
-    created_at: new Date().toISOString().slice(0, 10)
-  };
-
-  posts.push(newPost);
-  res.status(201).json(newPost);
-});
-
-// UPDATE AN EXISTING POST
-app.put('/posts/:id', (req, res) => {
-  const id = Number(req.params.id);
-  const post = posts.find((p) => p.id === id);
-
-  if (!post) {
-    return res.status(404).json({ error: 'Post not found' });
-  }
-
-  const { title, content, author_id, published } = req.body;
-
-  if (author_id !== undefined) {
     const authorId = Number(author_id);
     const authorExists = authors.some((a) => a.id === authorId);
 
     if (!authorExists) {
       return res.status(400).json({ error: 'Author does not exist' });
     }
-    post.author_id = authorId;
+
+    const newId = posts.length > 0 ? posts[posts.length - 1].id + 1 : 1;
+    const newPost = {
+      id: newId,
+      title,
+      content,
+      author_id: authorId,
+      published: published ?? false,
+      created_at: new Date().toISOString().slice(0, 10)
+    };
+
+    posts.push(newPost);
+    res.status(201).json(newPost);
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ error: 'Internal server error' });
   }
+});
 
-  if (title) post.title = title;
-  if (content) post.content = content;
-  if (published !== undefined) post.published = published;
+// UPDATE AN EXISTING POST
+app.put('/posts/:id', async (req, res) => {
+  try {
+    const id = Number(req.params.id);
+    const post = posts.find((p) => p.id === id);
 
-  res.json(post);
+    if (!post) {
+      return res.status(404).json({ error: 'Post not found' });
+    }
+
+    const { title, content, author_id, published } = req.body;
+
+    if (author_id !== undefined) {
+      const authorId = Number(author_id);
+      const authorExists = authors.some((a) => a.id === authorId);
+
+      if (!authorExists) {
+        return res.status(400).json({ error: 'Author does not exist' });
+      }
+      post.author_id = authorId;
+    }
+
+    if (title) post.title = title;
+    if (content) post.content = content;
+    if (published !== undefined) post.published = published;
+
+    res.json(post);
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ error: 'Internal server error' });
+  }
 });
 
 // DELETE A POST
-app.delete('/posts/:id', (req, res) => {
-  const id = Number(req.params.id);
-  const postIndex = posts.findIndex((p) => p.id === id);
+app.delete('/posts/:id', async (req, res) => {
+  try {
+    const id = Number(req.params.id);
+    const postIndex = posts.findIndex((p) => p.id === id);
 
-  if (postIndex === -1) {
-    return res.status(404).json({ error: 'Post not found' });
+    if (postIndex === -1) {
+      return res.status(404).json({ error: 'Post not found' });
+    }
+
+    posts.splice(postIndex, 1);
+    res.status(204).send();
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ error: 'Internal server error' });
   }
-
-  posts.splice(postIndex, 1);
-  res.status(204).send();
 });
 
 module.exports = app;
