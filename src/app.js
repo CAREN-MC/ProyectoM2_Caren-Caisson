@@ -4,11 +4,7 @@ const app = express();
 
 app.use(express.json());
 
-const authors = [
-  { id: 1, name: 'Susana Cordisco', email: 'scord@gmail.com' },
-  { id: 2, name: 'Maria Palomeque', email: 'mpalomeque@gmail.com' },
-  { id: 3, name: 'Jorge Pinto', email: 'jpinto@gmail.com' }
-];
+// ---------- AUTHORS ----------
 
 // GET ALL AUTHORS
 app.get('/authors', async (req, res) => {
@@ -24,14 +20,13 @@ app.get('/authors', async (req, res) => {
 // GET AUTHOR BY ID
 app.get('/authors/:id', async (req, res) => {
   try {
-    const id = Number(req.params.id);
-    const author = authors.find((a) => a.id === id);
+    const result = await pool.query('SELECT * FROM authors WHERE id = $1', [req.params.id]);
 
-    if (!author) {
+    if (result.rows.length === 0) {
       return res.status(404).json({ error: 'Author not found' });
     }
 
-    res.json(author);
+    res.json(result.rows[0]);
   } catch (error) {
     console.error(error);
     res.status(500).json({ error: 'Internal server error' });
@@ -47,11 +42,12 @@ app.post('/authors', async (req, res) => {
       return res.status(400).json({ error: 'Name and email are required' });
     }
 
-    const newId = authors.length > 0 ? authors[authors.length - 1].id + 1 : 1;
-    const newAuthor = { id: newId, name, email };
-    authors.push(newAuthor);
+    const result = await pool.query(
+      'INSERT INTO authors (name, email) VALUES ($1, $2) RETURNING *',
+      [name, email]
+    );
 
-    res.status(201).json(newAuthor);
+    res.status(201).json(result.rows[0]);
   } catch (error) {
     console.error(error);
     res.status(500).json({ error: 'Internal server error' });
@@ -61,18 +57,22 @@ app.post('/authors', async (req, res) => {
 // UPDATE AN EXISTING AUTHOR
 app.put('/authors/:id', async (req, res) => {
   try {
-    const id = Number(req.params.id);
-    const author = authors.find((a) => a.id === id);
+    const { name, email } = req.body;
 
-    if (!author) {
+    const result = await pool.query(
+      `UPDATE authors
+       SET name = COALESCE($1, name),
+           email = COALESCE($2, email)
+       WHERE id = $3
+       RETURNING *`,
+      [name || null, email || null, req.params.id]
+    );
+
+    if (result.rows.length === 0) {
       return res.status(404).json({ error: 'Author not found' });
     }
 
-    const { name, email } = req.body;
-    if (name) author.name = name;
-    if (email) author.email = email;
-
-    res.json(author);
+    res.json(result.rows[0]);
   } catch (error) {
     console.error(error);
     res.status(500).json({ error: 'Internal server error' });
@@ -82,14 +82,12 @@ app.put('/authors/:id', async (req, res) => {
 // DELETE AN AUTHOR
 app.delete('/authors/:id', async (req, res) => {
   try {
-    const id = Number(req.params.id);
-    const authorIndex = authors.findIndex((a) => a.id === id);
+    const result = await pool.query('DELETE FROM authors WHERE id = $1', [req.params.id]);
 
-    if (authorIndex === -1) {
+    if (result.rowCount === 0) {
       return res.status(404).json({ error: 'Author not found' });
     }
 
-    authors.splice(authorIndex, 1);
     res.status(204).send();
   } catch (error) {
     console.error(error);
@@ -97,70 +95,13 @@ app.delete('/authors/:id', async (req, res) => {
   }
 });
 
-const posts = [
-  {
-    id: 1,
-    title: 'Lluvia de marzo',
-    content: 'Poema sobre las tardes de lluvia y los recuerdos que despiertan...',
-    author_id: 1,
-    published: true,
-    created_at: '2026-11-11'
-  },
-  {
-    id: 2,
-    title: 'El dragón que tenía miedo a la oscuridad',
-    content: 'Cuento infantil sobre un pequeño dragón y su amigo luciérnaga...',
-    author_id: 2,
-    published: true,
-    created_at: '2026-11-11'
-  },
-  {
-    id: 3,
-    title: 'Microficción: el último tren',
-    content: 'Un hombre espera un tren que nunca llega, hasta que...',
-    author_id: 1,
-    published: true,
-    created_at: '2026-11-11'
-  },
-  {
-    id: 4,
-    title: 'Colonia en Marte',
-    content: 'Relato de ciencia ficción sobre la primera familia nacida en Marte...',
-    author_id: 3,
-    published: false,
-    created_at: '2026-11-11'
-  },
-  {
-    id: 5,
-    title: 'Cuentos para antes de dormir',
-    content: 'Borrador de una colección de cuentos cortos para leer en voz alta...',
-    author_id: 1,
-    published: false,
-    created_at: '2026-11-11'
-  }
-];
+// ---------- POSTS ----------
 
 // GET ALL POSTS
 app.get('/posts', async (req, res) => {
   try {
-    res.json(posts);
-  } catch (error) {
-    console.error(error);
-    res.status(500).json({ error: 'Internal server error' });
-  }
-});
-
-// GET POST BY ID
-app.get('/posts/:id', async (req, res) => {
-  try {
-    const id = Number(req.params.id);
-    const post = posts.find((p) => p.id === id);
-
-    if (!post) {
-      return res.status(404).json({ error: 'Post not found' });
-    }
-
-    res.json(post);
+    const result = await pool.query('SELECT * FROM posts ORDER BY id');
+    res.json(result.rows);
   } catch (error) {
     console.error(error);
     res.status(500).json({ error: 'Internal server error' });
@@ -170,16 +111,34 @@ app.get('/posts/:id', async (req, res) => {
 // GET POSTS BY AUTHOR ID
 app.get('/posts/author/:authorId', async (req, res) => {
   try {
-    const authorId = Number(req.params.authorId);
-    const author = authors.find((a) => a.id === authorId);
+    const authorResult = await pool.query('SELECT * FROM authors WHERE id = $1', [req.params.authorId]);
 
-    if (!author) {
+    if (authorResult.rows.length === 0) {
       return res.status(404).json({ error: 'Author not found' });
     }
 
-    const authorPosts = posts.filter((p) => p.author_id === authorId);
+    const postsResult = await pool.query(
+      'SELECT * FROM posts WHERE author_id = $1 ORDER BY id',
+      [req.params.authorId]
+    );
 
-    res.json({ author, posts: authorPosts });
+    res.json({ author: authorResult.rows[0], posts: postsResult.rows });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ error: 'Internal server error' });
+  }
+});
+
+// GET POST BY ID
+app.get('/posts/:id', async (req, res) => {
+  try {
+    const result = await pool.query('SELECT * FROM posts WHERE id = $1', [req.params.id]);
+
+    if (result.rows.length === 0) {
+      return res.status(404).json({ error: 'Post not found' });
+    }
+
+    res.json(result.rows[0]);
   } catch (error) {
     console.error(error);
     res.status(500).json({ error: 'Internal server error' });
@@ -195,25 +154,18 @@ app.post('/posts', async (req, res) => {
       return res.status(400).json({ error: 'Title, content, and author_id are required' });
     }
 
-    const authorId = Number(author_id);
-    const authorExists = authors.some((a) => a.id === authorId);
+    const authorResult = await pool.query('SELECT id FROM authors WHERE id = $1', [author_id]);
 
-    if (!authorExists) {
+    if (authorResult.rows.length === 0) {
       return res.status(400).json({ error: 'Author does not exist' });
     }
 
-    const newId = posts.length > 0 ? posts[posts.length - 1].id + 1 : 1;
-    const newPost = {
-      id: newId,
-      title,
-      content,
-      author_id: authorId,
-      published: published ?? false,
-      created_at: new Date().toISOString().slice(0, 10)
-    };
+    const result = await pool.query(
+      'INSERT INTO posts (title, content, author_id, published) VALUES ($1, $2, $3, $4) RETURNING *',
+      [title, content, author_id, published ?? false]
+    );
 
-    posts.push(newPost);
-    res.status(201).json(newPost);
+    res.status(201).json(result.rows[0]);
   } catch (error) {
     console.error(error);
     res.status(500).json({ error: 'Internal server error' });
@@ -223,30 +175,32 @@ app.post('/posts', async (req, res) => {
 // UPDATE AN EXISTING POST
 app.put('/posts/:id', async (req, res) => {
   try {
-    const id = Number(req.params.id);
-    const post = posts.find((p) => p.id === id);
-
-    if (!post) {
-      return res.status(404).json({ error: 'Post not found' });
-    }
-
     const { title, content, author_id, published } = req.body;
 
     if (author_id !== undefined) {
-      const authorId = Number(author_id);
-      const authorExists = authors.some((a) => a.id === authorId);
+      const authorResult = await pool.query('SELECT id FROM authors WHERE id = $1', [author_id]);
 
-      if (!authorExists) {
+      if (authorResult.rows.length === 0) {
         return res.status(400).json({ error: 'Author does not exist' });
       }
-      post.author_id = authorId;
     }
 
-    if (title) post.title = title;
-    if (content) post.content = content;
-    if (published !== undefined) post.published = published;
+    const result = await pool.query(
+      `UPDATE posts
+       SET title = COALESCE($1, title),
+           content = COALESCE($2, content),
+           author_id = COALESCE($3, author_id),
+           published = COALESCE($4, published)
+       WHERE id = $5
+       RETURNING *`,
+      [title || null, content || null, author_id ?? null, published ?? null, req.params.id]
+    );
 
-    res.json(post);
+    if (result.rows.length === 0) {
+      return res.status(404).json({ error: 'Post not found' });
+    }
+
+    res.json(result.rows[0]);
   } catch (error) {
     console.error(error);
     res.status(500).json({ error: 'Internal server error' });
@@ -256,14 +210,12 @@ app.put('/posts/:id', async (req, res) => {
 // DELETE A POST
 app.delete('/posts/:id', async (req, res) => {
   try {
-    const id = Number(req.params.id);
-    const postIndex = posts.findIndex((p) => p.id === id);
+    const result = await pool.query('DELETE FROM posts WHERE id = $1', [req.params.id]);
 
-    if (postIndex === -1) {
+    if (result.rowCount === 0) {
       return res.status(404).json({ error: 'Post not found' });
     }
 
-    posts.splice(postIndex, 1);
     res.status(204).send();
   } catch (error) {
     console.error(error);
