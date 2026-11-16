@@ -13,7 +13,8 @@ const authors = [
 // GET ALL AUTHORS
 app.get('/authors', async (req, res) => {
   try {
-    res.json(authors);
+    const result = await pool.query('SELECT * FROM authors ORDER BY id');
+    res.json(result.rows);
   } catch (error) {
     console.error(error);
     res.status(500).json({ error: 'Internal server error' });
