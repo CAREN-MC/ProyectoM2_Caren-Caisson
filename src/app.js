@@ -4,8 +4,6 @@ const app = express();
 
 app.use(express.json());
 
-// ---------- AUTHORS ----------
-
 // GET ALL AUTHORS
 app.get('/authors', async (req, res) => {
   try {
@@ -94,8 +92,6 @@ app.delete('/authors/:id', async (req, res) => {
     res.status(500).json({ error: 'Internal server error' });
   }
 });
-
-// ---------- POSTS ----------
 
 // GET ALL POSTS
 app.get('/posts', async (req, res) => {
