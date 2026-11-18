@@ -3,7 +3,6 @@ import request from 'supertest';
 import app from '../src/app.js';
 import pool from '../src/db/pool.js';
 
-// Datos compartidos entre los tests (el email cambia en cada corrida por Date.now())
 let createdAuthorId;
 const testEmail = `test.${Date.now()}@example.com`;
 
