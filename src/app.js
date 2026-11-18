@@ -61,6 +61,9 @@ app.post('/authors', async (req, res) => {
 
     res.status(201).json(result.rows[0]);
   } catch (error) {
+    if (error.code === '23505') {
+      return res.status(409).json({ error: 'Email already exists' });
+    }
     console.error(error);
     res.status(500).json({ error: 'Internal server error' });
   }
@@ -86,6 +89,9 @@ app.put('/authors/:id', validateIdParam(), async (req, res) => {
 
     res.json(result.rows[0]);
   } catch (error) {
+    if (error.code === '23505') {
+      return res.status(409).json({ error: 'Email already exists' });
+    }
     console.error(error);
     res.status(500).json({ error: 'Internal server error' });
   }
