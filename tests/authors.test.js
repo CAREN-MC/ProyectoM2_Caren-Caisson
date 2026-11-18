@@ -49,6 +49,12 @@ describe('GET /authors/:id', () => {
     const res = await request(app).get('/authors/999999');
     expect(res.status).toBe(404);
   });
+
+  it('devuelve 400 si el id no es un número', async () => {
+  const res = await request(app).get('/authors/abc');
+  expect(res.status).toBe(400);
+});
+
 });
 
 describe('PUT /authors/:id', () => {

@@ -4,6 +4,20 @@ const app = express();
 
 app.use(express.json());
 
+// Valida que el parámetro de la URL sea un entero positivo (si no, responde 400)
+function validateIdParam(paramName = 'id') {
+  return (req, res, next) => {
+    const value = Number(req.params[paramName]);
+
+    if (!Number.isInteger(value) || value <= 0) {
+      return res.status(400).json({ error: `Invalid ${paramName}` });
+    }
+
+    req.params[paramName] = value;
+    next();
+  };
+}
+
 // GET ALL AUTHORS
 app.get('/authors', async (req, res) => {
   try {
@@ -16,7 +30,7 @@ app.get('/authors', async (req, res) => {
 });
 
 // GET AUTHOR BY ID
-app.get('/authors/:id', async (req, res) => {
+app.get('/authors/:id', validateIdParam(), async (req, res) => {
   try {
     const result = await pool.query('SELECT * FROM authors WHERE id = $1', [req.params.id]);
 
@@ -53,7 +67,7 @@ app.post('/authors', async (req, res) => {
 });
 
 // UPDATE AN EXISTING AUTHOR
-app.put('/authors/:id', async (req, res) => {
+app.put('/authors/:id', validateIdParam(), async (req, res) => {
   try {
     const { name, email } = req.body;
 
@@ -78,7 +92,7 @@ app.put('/authors/:id', async (req, res) => {
 });
 
 // DELETE AN AUTHOR
-app.delete('/authors/:id', async (req, res) => {
+app.delete('/authors/:id', validateIdParam(), async (req, res) => {
   try {
     const result = await pool.query('DELETE FROM authors WHERE id = $1', [req.params.id]);
 
@@ -105,7 +119,7 @@ app.get('/posts', async (req, res) => {
 });
 
 // GET POSTS BY AUTHOR ID
-app.get('/posts/author/:authorId', async (req, res) => {
+app.get('/posts/author/:authorId', validateIdParam('authorId'), async (req, res) => {
   try {
     const authorResult = await pool.query('SELECT * FROM authors WHERE id = $1', [req.params.authorId]);
 
@@ -126,7 +140,7 @@ app.get('/posts/author/:authorId', async (req, res) => {
 });
 
 // GET POST BY ID
-app.get('/posts/:id', async (req, res) => {
+app.get('/posts/:id', validateIdParam(), async (req, res) => {
   try {
     const result = await pool.query('SELECT * FROM posts WHERE id = $1', [req.params.id]);
 
@@ -169,7 +183,7 @@ app.post('/posts', async (req, res) => {
 });
 
 // UPDATE AN EXISTING POST
-app.put('/posts/:id', async (req, res) => {
+app.put('/posts/:id', validateIdParam(), async (req, res) => {
   try {
     const { title, content, author_id, published } = req.body;
 
@@ -204,7 +218,7 @@ app.put('/posts/:id', async (req, res) => {
 });
 
 // DELETE A POST
-app.delete('/posts/:id', async (req, res) => {
+app.delete('/posts/:id', validateIdParam(), async (req, res) => {
   try {
     const result = await pool.query('DELETE FROM posts WHERE id = $1', [req.params.id]);
 
