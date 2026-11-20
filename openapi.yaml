@@ -5,11 +5,11 @@ info:
     API REST de MiniBlog (DevSpark) para gestionar authors y posts.
     Node.js + Express + PostgreSQL (consultas SQL directas con pg).
   version: 1.0.0
+  
 servers:
   - url: http://localhost:3000
     description: Local
-  # Reemplazar por la URL pública de Railway una vez desplegado
-  - url: https://TU-APP.up.railway.app
+  - url: https://miniblog-api-production-d3f45b72.up.railway.app
     description: Producción (Railway)
 
 tags:

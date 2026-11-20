@@ -1,8 +1,6 @@
 # MiniBlog API
 
-API REST para gestionar authors y posts, construida como base del servicio de contenidos MiniBlog de DevSpark.  Permite crear, leer, actualizar y borrar authors y posts, con datos persistidos en PostgreSQL.
-
-## Tecnologías
+API REST para gestionar authors y posts, construida como base del servicio de contenidos MiniBlog de DevSpark. Permite crear, leer, actualizar y borrar authors y posts, con datos persistidos en PostgreSQL.
 
 ## Tecnologías
 
@@ -110,7 +108,18 @@ miniblog-api/
 - `GET /posts/author/:authorId` - Obtener los posts de un autor, con el detalle del autor
 - `POST /posts` - Crear un nuevo post
 - `PUT /posts/:id` - Actualizar un post existente
-- `DELETE /posts/:id` - Eliminar un post    
+- `DELETE /posts/:id` - Eliminar un post
+
+### Validaciones y errores
+
+- `name` y `email` son obligatorios para crear un author (400 si falta alguno).
+- El `email` es único: si ya existe, responde 409.
+- `title`, `content` y `author_id` son obligatorios para crear un post (400 si falta alguno).
+- El `author_id` tiene que corresponder a un author existente (400 si no existe).
+- `published` es opcional y vale `false` por defecto.
+- Un `id` que no sea un entero positivo responde 400. Un id inexistente responde 404.
+- Una ruta que no existe responde 404.
+- Al eliminar un author se eliminan también sus posts (`ON DELETE CASCADE`).
 
 ## Ejemplos de uso
 
@@ -325,27 +334,11 @@ curl -X POST http://localhost:3000/authors \
   -d '{"name": "Otra Susana", "email": "scord@gmail.com"}'
 ```
 
+```json
 {
   "error": "Email already exists"
 }
-## Documentación Completa
-
-La documentación interactiva completa de la API está disponible en:
-
-**https://TU-APP.up.railway.app/api-docs**
-
-En local: http://localhost:3000/api-docs
-
-### Validaciones y errores
-
-- `name` y `email` son obligatorios para crear un author (400 si falta alguno).
-- El `email` es único: si ya existe, responde 409.
-- `title`, `content` y `author_id` son obligatorios para crear un post (400 si falta alguno).
-- El `author_id` tiene que corresponder a un author existente (400 si no existe).
-- `published` es opcional y vale `false` por defecto.
-- Un `id` que no sea un entero positivo responde 400. Un id inexistente responde 404.
-- Una ruta que no existe responde 404.
-- Al eliminar un author se eliminan también sus posts (`ON DELETE CASCADE`).
+```
 
 ## Tests
 
@@ -355,56 +348,46 @@ Los tests usan Vitest y Supertest, y se ejecutan con:
 npm test
 ```
 
-Requieren PostgreSQL en ejecución y el archivo `.env` configurado.
-
-> ⚠️ COMPLETAR: aclarar si los tests se ejecutan contra la misma base `miniblog` o contra una base de prueba, y si modifican los datos del seed. Si modifican la base, indicar que se puede restaurar con `setup.sql` y `seed.sql`.
+Requieren PostgreSQL en ejecución y el archivo `.env` configurado. Los tests se ejecutan contra la base indicada en `.env`, la misma que usa la API en local. Si la base queda con datos distintos a los del seed, se puede restaurar ejecutando de nuevo `setup.sql` y `seed.sql`.
 
 ## Documentación OpenAPI
 
-La documentación está en el archivo [`openapi.yaml`](./openapi.yaml). Se puede ver de estas formas:
+La documentación completa de la API está disponible en Swagger UI:
 
-- **En VS Code:** con una extensión de vista previa (por ejemplo Swagger Viewer), abriendo `openapi.yaml` y ejecutando la vista previa.
-- **En el navegador:** entrando a [editor.swagger.io](https://editor.swagger.io) y pegando el contenido del archivo.
+- **Producción:** https://miniblog-api-production-d3f45b72.up.railway.app/api-docs
+- **Local:** http://localhost:3000/api-docs
+
+La especificación está en el archivo [`openapi.yaml`](./openapi.yaml). También se puede ver en [editor.swagger.io](https://editor.swagger.io) pegando el contenido del archivo, o en VS Code con una extensión de vista previa (por ejemplo Swagger Viewer).
 
 Los `tags` del archivo (Authors y Posts) son opcionales: solo agrupan los endpoints en Swagger UI para que la documentación sea más fácil de leer.
 
-> ⚠️ COMPLETAR: si se agrega Swagger UI dentro de la API, indicar la ruta (por ejemplo `/docs`).
-
 ## Deployment en Railway
-
-> ⚠️ COMPLETAR: revisar cada paso contra lo que realmente se hizo y cargar las URLs reales. Los pasos son una guía general y los nombres de los menús de Railway pueden cambiar.
 
 1. **Subir el proyecto a GitHub** (sin `.env`).
 2. **Crear un proyecto en Railway** y agregar un servicio de **PostgreSQL**.
-3. **Agregar un servicio desde el repositorio de GitHub.** Railway instala las dependencias y arranca con `npm start`. El puerto lo asigna Railway mediante la variable `PORT`, que el servidor ya lee.
-4. **Cargar las variables de entorno** en el panel del servicio de la API, nunca en el repositorio:
+3. **Crear las tablas y los datos en la base de Railway.** Activar el acceso público de la base (Settings > Networking > TCP Proxy), conectarse con `psql` o SQL Shell al host y puerto públicos, y ejecutar `setup.sql` y después `seed.sql`.
+4. **Agregar un servicio desde el repositorio de GitHub** (+ Add > GitHub Repo). Railway instala las dependencias y arranca con `npm start`. El puerto lo asigna Railway mediante la variable `PORT`, que el servidor ya lee.
+5. **Cargar las variables de entorno** en la pestaña Variables del servicio de la API, nunca en el repositorio. Se usan referencias a la base de Railway:
 
    | Variable | Valor |
    |---|---|
-   | `DB_HOST` | host de la base de Railway |
-   | `DB_PORT` | puerto de la base |
-   | `DB_USER` | usuario de la base |
-   | `DB_PASSWORD` | contraseña de la base |
-   | `DB_NAME` | nombre de la base |
+   | `DB_HOST` | `${{Postgres.PGHOST}}` |
+   | `DB_PORT` | `${{Postgres.PGPORT}}` |
+   | `DB_USER` | `${{Postgres.PGUSER}}` |
+   | `DB_PASSWORD` | `${{Postgres.PGPASSWORD}}` |
+   | `DB_NAME` | `${{Postgres.PGDATABASE}}` |
 
-   Railway ofrece variables de referencia de su base de datos (`PGHOST`, `PGPORT`, `PGUSER`, `PGPASSWORD`, `PGDATABASE`) que se pueden usar como valores.
+6. **Generar el dominio público** del servicio de la API (Settings > Networking > Generate Domain, puerto 8080) y probar `/authors` y `/api-docs` con esa URL.
 
-5. **Crear las tablas y los datos en la base de Railway.** Conectarse con `psql` usando la **URL pública** de la base y ejecutar los scripts:
-
-   ```bash
-   psql "<URL-PUBLICA-DE-LA-BASE>" -f sql/setup.sql
-   psql "<URL-PUBLICA-DE-LA-BASE>" -f sql/seed.sql
-   ```
-
-6. **Generar el dominio público** del servicio de la API (Settings > Networking) y probar los endpoints con esa URL.
+Cada `git push` a la rama principal vuelve a desplegar la API automáticamente.
 
 ### URLs
 
 | | URL |
 |---|---|
-| URL pública de la API | `COMPLETAR` |
-| URL interna de la base (usada por la API dentro de Railway) | `COMPLETAR` |
-| URL pública de la base (usada solo para ejecutar los scripts desde mi computadora) | `COMPLETAR` (no incluir la contraseña) |
+| URL pública de la API | `https://miniblog-api-production-d3f45b72.up.railway.app` |
+| URL interna de la base (usada por la API dentro de Railway) | `postgres.railway.internal:5432` |
+| URL pública de la base (usada solo para ejecutar los scripts desde mi computadora) | `trolley.proxy.rlwy.net:57271` |
 
 ## Registro del uso de AI
 
@@ -421,15 +404,15 @@ Durante el proyecto usé **Claude** (Anthropic) como asistente de estudio y de r
 | 12–13/11 | Pruebas manuales | Cómo usar Thunder Client y qué casos probar. | Probé los endpoints y corregí errores (URL incompleta, servidor sin reiniciar). |
 | 13/11 | Plan de trabajo | Una planilla con las etapas y los plazos. | La usé para organizarme. |
 | 14/11 | Conexión a PostgreSQL | Cómo configurar el `.env` y el `Pool` de `pg`. | Escribí `pool.js` y `.env`. La IA corrigió los nombres de las variables y sugirió que la contraseña no esté en el código. |
-| `COMPLETAR` | Endpoints con SQL | `COMPLETAR` | `COMPLETAR` |
-| `COMPLETAR` | Validaciones, errores y tests | `COMPLETAR` | `COMPLETAR` |
+| 14–18/11 | Endpoints con SQL | Cómo pasar los endpoints de arrays a consultas SQL parametrizadas con `pg`. | Reescribí los endpoints con `pool.query` y probé cada uno con Thunder Client. |
+| 14–18/11 | Validaciones, errores y tests | Cómo validar ids, manejar errores con un middleware y escribir tests con Vitest y Supertest. | Implementé `errorHandler`, `createError` y los 22 tests, y los corrí hasta que pasaron todos. |
 | 19/11 | Soporte de `bio` | Por qué no se guardaba el campo `bio`. | Modifiqué `POST` y `PUT` de authors con las líneas sugeridas. |
 | 19/11 | Documentación OpenAPI | Una propuesta de `openapi.yaml` con los 11 endpoints. | Escribí mi propio archivo, corregí mis errores de sintaxis y lo comparé con la propuesta. Los `tags` y la estructura base salieron de esa propuesta. |
-| 19/11 | README | Un borrador del README y de este registro. | `COMPLETAR`: revisar, corregir y completar con datos reales. |
-| `COMPLETAR` | Deployment en Railway | `COMPLETAR` | `COMPLETAR` |
+| 19/11 | README | Un borrador del README y de este registro. | Lo revisé, corregí las tecnologías (`pg` es un cliente, no un ORM) y completé los datos reales. |
+| 20/11 | Deployment en Railway | Los pasos para desplegar la API y la base en Railway. | Cargué las variables con referencias, generé el dominio y probé `/authors` y `/api-docs` en producción. |
 
 ### Criterio de uso
 
 - La IA orientó y revisó, pero el código se probó con Thunder Client y con los tests antes de aceptarlo.
 - Cuando no entendía una parte, pedí la explicación antes de incorporarla.
-- Las credenciales reales nunca se incluyen en el repositorio: están solo en `.env`, que está en `.gitignore`.
+- Las credenciales reales nunca se incluyen en el repositorio: están solo en `.env`, que está en `.gitignore`.  
