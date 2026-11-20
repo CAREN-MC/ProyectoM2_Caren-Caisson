@@ -46,7 +46,7 @@ miniblog-api/
 1. **Clonar el repositorio e instalar dependencias**
 
    ```bash
-   git clone <URL-DEL-REPOSITORIO>
+   git clone https://github.com/CAREN-MC/miniblog-api.git
    cd miniblog-api
    npm install
    ```
