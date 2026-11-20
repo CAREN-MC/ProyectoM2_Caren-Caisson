@@ -1,3 +1,6 @@
+const swaggerUi = require('swagger-ui-express');
+const YAML = require('yamljs');
+const path = require('path');
 const express = require('express');
 const pool = require('./db/pool');
 const createError = require('./utils/createError');
@@ -199,27 +202,46 @@ app.put('/posts/:id', validateIdParam(), async (req, res, next) => {
   }
 });
 
-// DELETE A POST
-app.delete('/posts/:id', validateIdParam(), async (req, res, next) => {
-  try {
-    const result = await pool.query('DELETE FROM posts WHERE id = $1', [req.params.id]);
+  // DELETE AN AUTHOR
+  app.delete('/authors/:id', validateIdParam(), async (req, res, next) => {
+    try {
+      const result = await pool.query('DELETE FROM authors WHERE id = $1', [req.params.id]);
 
-    if (result.rowCount === 0) {
-      throw createError(404, 'Post not found');
+      if (result.rowCount === 0) {
+        throw createError(404, 'Author not found');
+      }
+
+      res.status(204).send();
+    } catch (error) {
+      next(error);
     }
+  });
 
-    res.status(204).send();
-  } catch (error) {
-    next(error);
-  }
-});
+  // DELETE A POST
+  app.delete('/posts/:id', validateIdParam(), async (req, res, next) => {
+    try {
+      const result = await pool.query('DELETE FROM posts WHERE id = $1', [req.params.id]);
 
-// Ruta inexistente -> 404
-app.use((req, res, next) => {
-  next(createError(404, 'Route not found'));
-});
+      if (result.rowCount === 0) {
+        throw createError(404, 'Post not found');
+      }
 
-// Middleware de errores: SIEMPRE al final, después de todas las rutas
+      res.status(204).send();
+    } catch (error) {
+      next(error);
+    }
+  });
+
+  // ---------- DOCUMENTACIÓN ----------
+  const swaggerDocument = YAML.load(path.join(__dirname, '..', 'openapi.yaml'));
+  app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerDocument));
+
+  // Ruta inexistente -> 404
+  app.use((req, res, next) => {
+    next(createError(404, 'Route not found'));
+  });
+
+  // Middleware de errores: SIEMPRE al final, después de todas las rutas
 app.use(errorHandler);
 
 module.exports = app;
