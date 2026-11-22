@@ -75,6 +75,10 @@ app.put('/authors/:id', validateIdParam(), async (req, res, next) => {
   try {
     const { name, email, bio } = req.body;
 
+    if (name !== undefined && (typeof name !== 'string' || name.trim() === '')) {
+      throw createError(400, 'Name cannot be empty');
+    }
+
     const result = await pool.query(
       `UPDATE authors
        SET name = COALESCE($1, name),
