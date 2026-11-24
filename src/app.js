@@ -9,6 +9,18 @@ const app = express();
 
 app.use(express.json());
 
+// ROOT
+app.get('/', (req, res) => {
+  res.json({
+    message: 'MiniBlog API',
+    endpoints: {
+      authors: '/authors',
+      posts: '/posts',
+      docs: '/api-docs'
+    }
+  });
+});
+
 // Valida que el parámetro de la URL sea un entero positivo (si no, 400)
 function validateIdParam(paramName = 'id') {
   return (req, res, next) => {
@@ -55,7 +67,7 @@ app.post('/authors', async (req, res, next) => {
   try {
     const { name, email, bio } = req.body;
 
-    if (!name || !email) {
+      if (!name || name.trim() === '' || !email) {
       throw createError(400, 'Name and email are required');
     }
 

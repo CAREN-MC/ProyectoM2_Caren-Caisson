@@ -7,10 +7,9 @@ info:
   version: 1.0.0
   
 servers:
-  - url: http://localhost:3000
-    description: Local
   - url: https://miniblog-api-production-d3f45b72.up.railway.app
     description: Producción (Railway)
+ 
 
 tags:
   - name: Authors
