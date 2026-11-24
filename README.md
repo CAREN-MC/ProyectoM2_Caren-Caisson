@@ -46,12 +46,11 @@ miniblog-api/
 ## Ejecutar en local
 
 1. **Clonar el repositorio e instalar dependencias**
-
-   ```bash
-   git clone https://github.com/CAREN-MC/miniblog-api.git
-   cd miniblog-api
-   npm install
-   ```
+```bash
+git clone https://github.com/CAREN-MC/ProyectoM2_Caren-Caisson.git
+cd ProyectoM2_Caren-Caisson
+npm install
+````
 
 2. **Crear la base de datos** (en psql o SQL Shell):
 
