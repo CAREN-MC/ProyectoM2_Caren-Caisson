@@ -1,4 +1,3 @@
-Registro por fecha
 06/11 — Planificación
 Qué le pedí: una guía de trabajo con plazos hasta el 25/11, adjuntando la consigna.
 Qué hice: la usé como plan y checklist. Decidí usar authors como nombre de la entidad en lugar de users.
@@ -50,7 +49,9 @@ Qué hice: probé los casos en Thunder Client, vi que el PUT aceptaba un nombre 
 23/11 — Revisión final y apunte de estudio
 Qué le pedí: una revisión de todo el proyecto contra la consigna y un resumen ordenado de principio a fin.
 Qué hice: revisé el checklist (repositorio, .env, tests, producción), comprobé que no hubiera claves en el historial de git y usé el resumen para estudiar.
-
+24/11 — Ajustes pedidos en la revisión del proyecto
+Qué le pedí: ayuda para aplicar los cambios que me pidieron: más autores y posts de ejemplo, el link del deploy al inicio del README, sacar localhost del YAML y mover el registro de IA a un archivo aparte. También por qué la raíz de la API respondía "Route not found".
+Qué hice: agregué autores y posts a seed.sql y corregí mis errores de sintaxis (un paréntesis de más y filas sin encabezado INSERT). Cargué los datos en la base local y en Railway. Agregué la ruta / y la validación de name con trim() en POST /authors. Actualicé el README y el openapi.yaml. Además, por pedido de la cátedra, renombré el repositorio y actualicé el remoto y el link del git clone.
 
 Criterio de uso
 La IA orientó y revisó, pero el código se probó con Thunder Client y con los tests antes de aceptarlo.
